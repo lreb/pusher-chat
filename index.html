@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Pusher</title>
+
+	<script src="https://js.pusher.com/4.1/pusher.min.js"></script>
+  	
+</head>
+<body>
+	<h1>Pusher chat</h1>
+	<div>
+		
+	</div>
+	<div id="chat"></div>
+	<div id="chat-message"></div>
+	<script type="text/javascript">
+		 // Enable pusher logging - don't include this in production
+    	Pusher.logToConsole = true;
+		var APP_KEY = '8ddcdf34609e091e8806';
+        var APP_CLUSTER = 'us2';
+        const socket = new Pusher(APP_KEY, {
+            cluster: APP_CLUSTER,
+            authEndpoint: 'http://8a6de384.ngrok.io/pusher/auth',   
+            encrypted: true
+        });
+        console.log('socket');
+        console.log(socket);
+        // first connection
+        var pusher = new Pusher(APP_KEY, {
+	      cluster: APP_CLUSTER,
+	      encrypted: true
+	    });
+	    // channel
+        var channel = pusher.subscribe('my-channel');
+    		channel.bind('my-event', function(data) {
+      		console.log('channel event' + data.message);
+    	});
+    	console.log(pusher);
+    	// listen for events
+    	channel.bind('my-event', function(data) {
+		  //alert('An event was triggered with message: ' + data.message);
+		  document.getElementById('chat-message').innerHTML += '<br>' +data.message;
+		});
+		pusher.connection.bind('connected', function() {
+  			document.getElementById('chat').innerHTML += '<br>Realtime is go!';
+		});
+		// estableciendo conexion
+		pusher.connection.bind('connecting_in', function(delay) {
+		  alert("I haven't been able to establish a connection for this feature.  " +
+		        "I will try again in " + delay + " seconds.")
+		});
+		// estados
+		var state = pusher.connection.state;
+		pusher.connection.bind('state_change', function(states) {
+		  // states = {previous: 'oldState', current: 'newState'}
+		  document.getElementById('chat').innerHTML += "Pusher's current state is " + states.current;
+		});
+	</script>
+</body>
+</html>
