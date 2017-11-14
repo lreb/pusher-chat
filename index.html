@@ -33,7 +33,7 @@
         var pusher = null;
         var socketId = null;
         var sessionId = null;
-
+        var state = null;
         /*const socket = new Pusher(APP_KEY, {
             cluster: APP_CLUSTER,
             authEndpoint: 'http://8a6de384.ngrok.io/pusher/auth',   
@@ -49,8 +49,12 @@
 		      cluster: APP_CLUSTER,
 		      encrypted: true,
 		      auth: {
-			    params: { foo: 'bar' },
-			    headers: { baz: 'boo' }
+			    params: { 
+			    	CSRFToken: 'here goes jwt' //for improve management
+			    },
+			    headers: { 
+			    	X-CSRF-Token: 'some_csrf_token'
+			    }
 			  }
 		    });
 		    sessionId = pusher.sessionID;
@@ -73,18 +77,18 @@
 
 			
 
-			// detect when user is reconecting
+			// detect when user is reconecting and show pending time 
 			pusher.connection.bind('connecting_in', function(delay) {
 			  alert("I haven't been able to establish a connection for this feature.  " +
 			        "I will try again in " + delay + " seconds.");
 			});
-			// detect first conection
+			// detect real time connection
 			pusher.connection.bind('connected', function() {
 			  socketId = pusher.connection.socket_id;
 			  console.log('socket_id: ' + socketId);
 			});
 			// detect when state changes
-			var state = pusher.connection.state;
+			state = pusher.connection.state;
 			pusher.connection.bind('state_change', function(states) {
 			  // states = {previous: 'oldState', current: 'newState'}
 			  document.getElementById('chat').innerHTML += " <br> Pusher's current state is " + states.current;
