@@ -3,6 +3,7 @@
 <head>
 	<meta charset="UTF-8">
 	<title>Pusher</title>
+	<link rel="stylesheet" type="text/css" href="css/style.css">
 	<script
   src="https://code.jquery.com/jquery-3.2.1.min.js"
   integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4="
@@ -11,17 +12,29 @@
   	
 </head>
 <body>
-	<h1>Pusher chat</h1>
 	<div>
-		<input type="text" id="user_id" placeholder="id">
+		
+	</div>
+	
+	<div class="menu">
+        <div class="back"><i class="fa fa-chevron-left"></i> <img src="https://i.imgur.com/DY6gND0.png" draggable="false"/></div>
+        <!-- <div class="name">Alex</div>
+        <div class="last">18:09</div> -->
+        <div style="margin-left: 20%;">
+        <input type="text" id="user_id" placeholder="id">
 		<input type="text" id="user_info" placeholder="name">
 		<button onclick="Connnect();">start</button>
 		<button onclick="Disconect();">end</button>
-	</div>
-	<div id="chat"></div>
-	<div id="chat-message"></div>
-	<input type="text" id="user_message" placeholder="message">
-	<button onclick="Send();">send</button>
+		</div>
+    </div>
+    <ol class="chat" id="chat-message">
+    	
+    </ol>
+	<input id="input-message" class="textarea" type="text" placeholder="Type here!"/><div class="emojis"></div>
+
+    <div id="chat"></div>
+	<!-- <div id="chat-message"></div> -->
+
 	<script type="text/javascript">
 		 // Enable pusher logging - don't include this in production
     	Pusher.logToConsole = true;
@@ -34,6 +47,9 @@
         var socketId = null;
         var sessionId = null;
         var state = null;
+        var channel = null;
+        var membersChannel = 0;
+
         /*const socket = new Pusher(APP_KEY, {
             cluster: APP_CLUSTER,
             authEndpoint: 'http://8a6de384.ngrok.io/pusher/auth',   
@@ -41,43 +57,79 @@
         });
         console.log('socket');
         console.log(socket);*/
+        /** type(self or other)
+			userImage (pathImage)
+			message (text message)
+        */
+        function Message(type, userImage, message) {
+        	var text = "<li class='" + type + "'>" +
+	        "<div class='avatar'><img src='" + userImage + "' draggable='false'/></div>" +
+		      "<div class='msg'>" +
+		        "<p>" + message + "</p>" +
+		        "<time>" + new Date().getTimezoneOffset();  + "</time>" +
+		      "</div>"+
+		    "</li>";
+		    document.getElementById('chat-message').innerHTML += '<br>' + text;
+        }
+        /*function OtherMessage(){
+        	var text = "<li class="other">
+	        <div class="avatar"><img src="https://i.imgur.com/DY6gND0.png" draggable="false"/></div>
+	      <div class="msg">
+	        <p>Hola!</p>
+	        <p>Te vienes a cenar al centro? <emoji class="pizza"/></p>
+	        <time>20:17</time>
+	      </div>
+	    </li>"
+        }*/
         // first connection
         function Connnect(){
         	console.log(document.getElementById('user_id').value);
         	console.log(document.getElementById('user_info').value);
-        	pusher = new Pusher(APP_KEY, {
-		      cluster: APP_CLUSTER,
-		      encrypted: true,
-		      auth: {
+        	pusher = new Pusher(APP_KEY, {	
+		      cluster: APP_CLUSTER, //server
+		      encrypted: true //secure encrypt
+		      /*auth: {
 			    params: { 
 			    	CSRFToken: 'here goes jwt' //for improve management
 			    },
 			    headers: { 
 			    	X-CSRF-Token: 'some_csrf_token'
 			    }
-			  }
+			  }*/
 		    });
 		    sessionId = pusher.sessionID;
 		    console.log('pusher');
 		    console.log(pusher);
 		    // subscribe to channel
-	        var channel = pusher.subscribe('my-channel');
+	        channel = pusher.subscribe('my-channel');
 	    		channel.bind('my-event', function(data) {
 	    		console.log('channel bind my-event');
 	      		console.log('channel event: ' + data);
-	      		document.getElementById('chat-message').innerHTML += '<br>' +data.message + ' - from ' + data.user_name;
+	      		if(data.socket_id == socketId){
+	      			console.log('myself');
+	      			Message("self","https://i.imgur.com/HYcn9xO.png",data.message);
+	      		}
+	      		else{
+	      			console.log('other');
+	      			Message("other","https://i.imgur.com/HYcn9xO.png",data.message);
+	      		}
+	      		//document.getElementById('chat-message').innerHTML += '<br>' +data.message + ' - from ' + data.user_name;
 	    	});
 	    	console.log('channel');
 	    	console.log(channel);
+	    	//membersChannel = channel.members.count;
 	    	// listen for events
 	    	//channel.bind('my-event', function(data) {
 			  //alert('An event was triggered with message: ' + data.message);
 			  //document.getElementById('chat-message').innerHTML += '<br>' +data.message;
 			//});
 
-			
+			pusher.connection.bind('new-comment', function(data) {
+				console.log(data);
+		    	// add comment into page
+		  	});
 
-			// detect when user is reconecting and show pending time 
+			// detect when user is reconecting and show pending time (server)
 			pusher.connection.bind('connecting_in', function(delay) {
 			  alert("I haven't been able to establish a connection for this feature.  " +
 			        "I will try again in " + delay + " seconds.");
@@ -102,7 +154,7 @@
         }
         /** send message */
         function Send(){
-        	var msg = document.getElementById('user_message').value;
+        	var msg = document.getElementById('input-message').value;
         	var usr_name = document.getElementById('user_info').value;
         	console.log(msg);
         	$.ajax({
@@ -122,6 +174,14 @@
         function Disconect(){
         	pusher.disconnect();
         }
+        /** */
+        document.querySelector('#input-message').addEventListener('keypress', function (e) {
+		    var key = e.which || e.keyCode;
+		    if (key === 13) { // 13 is enter
+		      // code for enter
+		      Send();
+		    }
+		});
 	</script>
 </body>
 </html>
