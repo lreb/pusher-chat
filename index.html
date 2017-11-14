@@ -3,59 +3,109 @@
 <head>
 	<meta charset="UTF-8">
 	<title>Pusher</title>
-
+	<script
+  src="https://code.jquery.com/jquery-3.2.1.min.js"
+  integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4="
+  crossorigin="anonymous"></script>
 	<script src="https://js.pusher.com/4.1/pusher.min.js"></script>
   	
 </head>
 <body>
 	<h1>Pusher chat</h1>
 	<div>
-		
+		<input type="text" id="user_id" placeholder="id">
+		<input type="text" id="user_info" placeholder="name">
+		<button onclick="Chat();">start</button>
 	</div>
 	<div id="chat"></div>
 	<div id="chat-message"></div>
+	<input type="text" id="user_message" placeholder="message">
+	<button onclick="Send();">send</button>
 	<script type="text/javascript">
 		 // Enable pusher logging - don't include this in production
     	Pusher.logToConsole = true;
 		var APP_KEY = '8ddcdf34609e091e8806';
         var APP_CLUSTER = 'us2';
-        const socket = new Pusher(APP_KEY, {
+        var HOST = 'http://8a6de384.ngrok.io/v1/pusher/auth'
+        /*const socket = new Pusher(APP_KEY, {
             cluster: APP_CLUSTER,
             authEndpoint: 'http://8a6de384.ngrok.io/pusher/auth',   
             encrypted: true
         });
         console.log('socket');
-        console.log(socket);
+        console.log(socket);*/
         // first connection
-        var pusher = new Pusher(APP_KEY, {
-	      cluster: APP_CLUSTER,
-	      encrypted: true
-	    });
-	    // channel
-        var channel = pusher.subscribe('my-channel');
-    		channel.bind('my-event', function(data) {
-      		console.log('channel event' + data.message);
-    	});
-    	console.log(pusher);
-    	// listen for events
-    	channel.bind('my-event', function(data) {
-		  //alert('An event was triggered with message: ' + data.message);
-		  document.getElementById('chat-message').innerHTML += '<br>' +data.message;
-		});
-		pusher.connection.bind('connected', function() {
-  			document.getElementById('chat').innerHTML += '<br>Realtime is go!';
-		});
-		// estableciendo conexion
-		pusher.connection.bind('connecting_in', function(delay) {
-		  alert("I haven't been able to establish a connection for this feature.  " +
-		        "I will try again in " + delay + " seconds.")
-		});
-		// estados
-		var state = pusher.connection.state;
-		pusher.connection.bind('state_change', function(states) {
-		  // states = {previous: 'oldState', current: 'newState'}
-		  document.getElementById('chat').innerHTML += "Pusher's current state is " + states.current;
-		});
+        function Chat(){
+        	console.log(document.getElementById('user_id').value);
+        	console.log(document.getElementById('user_info').value);
+        	var pusher = new Pusher(APP_KEY, {
+		      cluster: APP_CLUSTER,
+		      encrypted: true,
+		      auth: {
+			    params: { foo: 'bar' },
+			    headers: { baz: 'boo' }
+			  }
+		    });
+		    // channel
+	        var channel = pusher.subscribe('my-channel');
+	    		channel.bind('my-event', function(data) {
+	      		console.log('channel event' + data.message);
+	      		document.getElementById('chat-message').innerHTML += '<br>' +data.message;
+	    	});
+	    	console.log(pusher);
+	    	// listen for events
+	    	//channel.bind('my-event', function(data) {
+			  //alert('An event was triggered with message: ' + data.message);
+			  //document.getElementById('chat-message').innerHTML += '<br>' +data.message;
+			//});
+			/*pusher.connection.bind('connected', function() {
+	  			document.getElementById('chat').innerHTML += '<br>Realtime is go!';
+			});*/
+			// estableciendo conexion
+			pusher.connection.bind('connecting_in', function(delay) {
+			  alert("I haven't been able to establish a connection for this feature.  " +
+			        "I will try again in " + delay + " seconds.")
+			});
+			// estados
+			var state = pusher.connection.state;
+			pusher.connection.bind('state_change', function(states) {
+			  // states = {previous: 'oldState', current: 'newState'}
+			  document.getElementById('chat').innerHTML += "Pusher's current state is " + states.current;
+			});
+        }
+
+        function Send(){
+        	var msg = document.getElementById('user_message').value;
+        	console.log(msg);
+        	$.ajax({
+			      type: 'POST',
+			      url: "http://8a6de384.ngrok.io/v1/pusher/auth",
+			      data: msg,
+			      dataType: "application/json",
+			      headers: {"Authorization": "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxMiwibmFtZSI6Ikx1aXMgUmF1bCBCZXRhIiwibGFzdF9uYW1lIjoiRXNwaW5vemEgQmFyYm96YSIsImVtYWlsIjoibHVpcy5lc3Bpbm96YUBidWlsZGJpbmRlci5jb20iLCJleHAiOjE1MTMyMDI4MjJ9.T5Ef23XN2dAqouUGxfjgc0uvy9GsfZoj3qeT6x7VzX0"},
+			      success: function(resultData) { alert("Save Complete") }
+			});
+        	/*  var settings = {
+			  "async": true,
+			  "crossDomain": true,
+			  "url": "http://8a6de384.ngrok.io/v1/pusher/auth",
+			  "method": "POST",
+			  "headers": {
+			    "authorization": "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxMiwibmFtZSI6Ikx1aXMgUmF1bCBCZXRhIiwibGFzdF9uYW1lIjoiRXNwaW5vemEgQmFyYm96YSIsImVtYWlsIjoibHVpcy5lc3Bpbm96YUBidWlsZGJpbmRlci5jb20iLCJleHAiOjE1MTMyMDI4MjJ9.T5Ef23XN2dAqouUGxfjgc0uvy9GsfZoj3qeT6x7VzX0",
+			    "content-type": "application/json",
+			    "cache-control": "no-cache"
+			  },
+			  "processData": false,
+			  "data": {
+			  	"message":msg
+			  }
+			}
+
+			$.ajax(settings).done(function (response) {
+			  console.log(response);
+			});*/
+        }
+        
 	</script>
 </body>
 </html>
